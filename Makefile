@@ -8,3 +8,7 @@ build:
 .PHONY: deploy
 deploy:
 	mvn deploy:deploy-file -Dfile=target/arrudeia.jar -DpomFile=pom.xml -DrepositoryId=clojars -Durl=https://clojars.org/repo/
+
+.PHONY: test
+test:
+	$(clj_cmd) -A:test

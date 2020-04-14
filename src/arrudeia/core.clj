@@ -47,6 +47,8 @@
   (let [keyword-steps
         (map-indexed (fn [idx form]
                        (cond
+                         (and (= idx 0)
+                              (symbol? form)) (keyword (str *ns*) (str form))
                          (symbol? form) (var->keyword (resolve form))
                          (list? form) (var->keyword (resolve (first form)))
                          :else idx))
