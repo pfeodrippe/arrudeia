@@ -1,0 +1,17 @@
+{:aliases
+ {:default-options
+  {:jvm-opts ["-Duser.language=en" "-Duser.country=US"]}
+
+  :depstar {:extra-deps {seancorfield/depstar {:mvn/version "1.0.94"}}}
+  :cider
+  {:extra-deps {cider/cider-nrepl {:mvn/version "0.22.4"}}
+   :main-opts ["-m" "nrepl.cmdline" "--middleware" "[cider.nrepl/cider-middleware]"]}
+
+  :dev {:extra-deps {com.billpiel/sayid {:mvn/version "0.0.18"}}
+        :extra-paths ["test"]}
+  :test {:extra-deps {lambdaisland/kaocha {:mvn/version "0.0-554"}}
+         :extra-paths ["test"]
+         :main-opts   ["-m" "kaocha.runner"]}}
+
+ :deps {org.clojure/clojure {:mvn/version "1.10.1"}}
+ :paths ["src"]}
