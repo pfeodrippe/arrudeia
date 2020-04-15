@@ -21,7 +21,7 @@
 
 (defn- receive-money!
   [{:keys [:receiver :receiver-new-amount] :as args}]
-  (ar/label :custom/receive-money
+  (ar/label {:identifier :custom/receive-money}
             (swap! balances assoc receiver receiver-new-amount))
   args)
 

@@ -27,7 +27,7 @@
 (defn request
   [data]
   (->* (adapt data)
-       add-new-amounts
-       give-money!
-       receive-money!)
+        add-new-amounts
+        (->* give-money!
+              receive-money!))
   @balances)

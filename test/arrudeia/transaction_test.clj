@@ -26,7 +26,7 @@
                                                   :receiver :c2}))]
     (ar/run-processes! [[t1 0]
                         [t1 1]
-                        [t1 2]]))
+                        [t1 ::transaction/give-money!]]))
   (is (= {:c1 9M :c2 10M}
          @transaction/balances)))
 

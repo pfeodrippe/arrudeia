@@ -141,16 +141,7 @@ Besides `->*`, also check `arrudeia.core/label`, it can be used in any
 place where you want to create a step to be tested.
 
 ## Problems
-### Do not nest multiple `->*`
-
-Example below
-``` clojure
-(->* a
-     (->* b))
-```
-It does not work as `->` by now, needs more macro love.
-
-### REPL freezes
+### REPL can freeze
 
 You may have to restart the REPL sometimes because there is some
 bug in this library or you just put called some step which does not

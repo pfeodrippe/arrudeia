@@ -12,3 +12,7 @@ deploy:
 .PHONY: test
 test:
 	$(clj_cmd) -A:test
+
+.PHONY: autotest
+autotest:
+	$(clj_cmd) -A:test --watch

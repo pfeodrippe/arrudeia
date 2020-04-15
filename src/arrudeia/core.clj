@@ -11,29 +11,31 @@
 (defonce semaphore (atom {:debug []}))
 
 (defn waiting-step
-  [args [proc-name keyword idx]]
-  (when-not *bypass*
-    (while (not (or (and (get @semaphore [proc-name :arrudeia/next])
-                         (not (contains? #{keyword idx}
-                                         (get @semaphore [proc-name :arrudeia/next]))))
-                    (= (get-in @semaphore [proc-name idx]) :start)
-                    (= (get-in @semaphore [proc-name keyword]) :start)))
-      (when (Thread/interrupted)
-        (.stop (Thread/currentThread))))
-    (when (and (get @semaphore [proc-name :arrudeia/next])
-               (contains? #{keyword idx}
-                          (get @semaphore [proc-name :arrudeia/next])))
-      (swap! semaphore assoc [proc-name :arrudeia/next] nil))
-    (swap! semaphore update :debug conj {:start [proc-name keyword idx]}))
-  args)
+  ([[proc-name keyword idx]]
+   (waiting-step {} [proc-name keyword idx]))
+  ([args [proc-name keyword idx]]
+   (when (not *bypass*)
+     (while (not (or (and (get @semaphore [proc-name :arrudeia/next])
+                          (not (contains? #{keyword idx}
+                                          (get @semaphore [proc-name :arrudeia/next]))))
+                     (= (get-in @semaphore [proc-name idx]) :start)
+                     (= (get-in @semaphore [proc-name keyword]) :start)))
+       (when (Thread/interrupted)
+         (.stop (Thread/currentThread))))
+     (when (and (get @semaphore [proc-name :arrudeia/next])
+                (contains? #{keyword idx}
+                           (get @semaphore [proc-name :arrudeia/next])))
+       (swap! semaphore assoc [proc-name :arrudeia/next] nil))
+     (swap! semaphore update :debug conj {:start [proc-name keyword idx]}))
+   args))
 
 (defn done-step
   [args [proc-name keyword idx]]
-  (when-not *bypass*
+  (when (not *bypass*)
     (swap! semaphore update :debug conj {:done [proc-name keyword idx]})
     (swap! semaphore assoc-in [proc-name [idx :args-after]] args)
-    (swap! semaphore assoc-in [proc-name [keyword :args-after]] args)
     (swap! semaphore assoc-in [proc-name idx] :done)
+    (swap! semaphore assoc-in [proc-name [keyword :args-after]] args)
     (swap! semaphore assoc-in [proc-name keyword] :done))
   args)
 
@@ -42,42 +44,47 @@
   (keyword (str (:ns (meta v)))
            (str (:name (meta v)))))
 
+(defmacro label
+  [{:keys [:identifier :idx]} & body]
+  `(do
+     (waiting-step {} [*proc-name* ~identifier ~idx])
+     (done-step
+      ~@body
+      [*proc-name* ~identifier ~idx])))
+
 (defmacro ->*
-  [x & forms]
+  [& forms]
   (let [keyword-steps
         (map-indexed (fn [idx form]
                        (cond
-                         (and (= idx 0)
+                         (and (zero? idx)
                               (symbol? form)) (keyword (str *ns*) (str form))
                          (symbol? form) (var->keyword (resolve form))
-                         (list? form) (var->keyword (resolve (first form)))
+                         (list? form) (let [res-form (resolve (first form))]
+                                        (when-not (:macro (meta res-form))
+                                          (var->keyword res-form)))
                          :else idx))
-                     (cons x forms))]
-    `(-> {} ~@(->> (cons `((fn [_#] ~x)) forms)
-                   (interleave (map (fn [i k]
-                                      `(waiting-step [*proc-name* ~k ~i]))
-                                    (range)
-                                    keyword-steps))
-                   (partition 2)
-                   (#(interleave % (map (fn [i k]
-                                          `[(done-step [*proc-name* ~k ~i])])
-                                        (range)
-                                        keyword-steps)))
-                   (apply concat)))))
-
-(defmacro label
-  [identifier & body]
-  `(do
-     (waiting-step {} [*proc-name* ~identifier -1])
-     (done-step
-      ~@body
-      [*proc-name* ~identifier -1])))
+                     forms)]
+    `(-> ~@(->> forms
+            (map (fn [idx k form]
+                   (cond
+                     (zero? idx) `(label {:identifier ~k :idx ~idx} ~form)
+                     (nil? k) `((fn [args#] (-> args# ~form)))
+                     :else
+                     `((fn [args#]
+                         (label {:identifier ~k :idx ~idx} (-> args# ~form))))))
+                 (range)
+                 keyword-steps)))))
 
 (defmacro register
   [proc-name pipe]
   `(let [p# {:proc (future
-                     (binding [*proc-name* ~proc-name]
-                       ~pipe))
+                     (try (binding [*proc-name* ~proc-name]
+                            ~pipe)
+                          (catch Exception e#
+                            (spit "a.txt"
+                                  (with-out-str
+                                    (clojure.pprint/pprint e#))))))
              :proc-name ~proc-name}]
      p#))
 
