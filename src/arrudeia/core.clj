@@ -5,7 +5,7 @@
 
 (defmacro with-bypass
   [& body]
-  `(binding [ar/*bypass* true]
+  `(binding [*bypass* true]
     ~@body))
 
 (defonce semaphore (atom {:debug []}))
