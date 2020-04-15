@@ -90,7 +90,7 @@ independently (run one step for one thread, then for another, then follow
 with more 2 steps for one thread etc).
 
 In *Arrudeia*, we have the macro `arrudeia.core/->*` which can replace
-thread-first macros (with some caveats, see at the section `Problems`).
+thread-first macros.
 
 We require it with
 
