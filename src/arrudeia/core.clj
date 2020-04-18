@@ -1,4 +1,5 @@
-(ns arrudeia.core)
+(ns arrudeia.core
+  (:require [clojure.math.combinatorics :as combo]))
 
 (def ^:dynamic *proc-name*)
 (def ^:dynamic *bypass* false)
@@ -112,3 +113,41 @@
   (let [debug (:debug @semaphore)]
     (swap! semaphore (constantly {:debug []}))
     debug))
+
+(defn parse-process-names
+  [process-name->process process-with-steps]
+  (->> process-with-steps
+       (mapv #(vector (process-name->process (first %))
+                      (last %)))))
+
+(defn valid-interleavings
+  "It returns all valid interleavings for processes with their steps.
+
+  For the example below, see that, for any interleaving, `:step2` never comes
+  before of `:step1` and `:step3` never appears before `:step2`. The order
+  passed at input is respected at interleavings so you always have valid
+  steps (we trust you to pass it correctly).
+
+  Usage example:
+  (valid-interleavings [[:t1 :step1]
+                        [:t1 :step2]
+                        [:t1 :step3]]
+                       [[:t2 :other-step-1]
+                        [:t2 :other-step-2]])
+  =>
+  [...           ;; other interleavings
+   [[:t1 :step1]
+    [:t2 :other-step-1]
+    [:t1 :step2]
+    [:t1 :step3]
+    [:t2 :other-step-2]]
+   ...]          ;; other interleavings
+  "
+  [& processes-with-steps]
+  (->> (combo/permutations (apply concat processes-with-steps))
+       (filter #(reduce (fn [_acc steps]
+                          (if (= steps (filter (set steps) %))
+                            true
+                            (reduced false)))
+                        true
+                        processes-with-steps))))

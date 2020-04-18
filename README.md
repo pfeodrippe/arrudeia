@@ -80,6 +80,7 @@ Imagine you have some contrived "server" code like below which can
                                  :sender :c2
                                  :receiver :c1})))))
 ```
+You can check check the tests [here](./test/arrudeia/core_test.clj)
 
 Hunnn, we have a feeling that this code is not thread safe. We can
 test mentally and find a race condition and we want to test our guess,
@@ -139,6 +140,29 @@ This is not good, but I leave the solution as an exercise to the reader =P
 
 Besides `->*`, also check `arrudeia.core/label`, it can be used in any
 place where you want to create a step to be tested.
+
+`arrudeia.core/valid-interleavings` returns all possible interleavings
+for multiple processes so you can test some invariants (check its doc).
+``` clojure
+;; example
+(valid-interleavings [[:t1 :step1]
+                      [:t1 :step2]
+                      [:t1 :step3]]
+                     [[:t2 :other-step-1]
+                      [:t2 :other-step-2]])
+  =>
+  [...           ;; other interleavings
+   [[:t1 :step1]
+    [:t2 :other-step-1]
+    [:t1 :step2]
+    [:t1 :step3]
+    [:t2 :other-step-2]]
+   ...]          ;; other interleavings
+
+```
+
+`arrudeia.core/parse-process-names` can be used together with
+the output of `valid-interleavings`, maps keywords to concrete processes.
 
 ## Problems
 ### REPL can freeze
