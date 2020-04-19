@@ -17,6 +17,7 @@
      ~@body))
 
 (defonce semaphore (atom {:debug []}))
+(defonce exceptions (atom []))
 
 (defn waiting-step
   ([[proc-name keyword idx]]
@@ -60,8 +61,8 @@
       ~@body
       [*proc-name* ~identifier ~idx])))
 
-(defmacro ->*
-  [& forms]
+(defn build-thread-first-macro-body
+  [->-macro & forms]
   (let [keyword-steps
         (map-indexed (fn [idx form]
                        (cond
@@ -73,32 +74,61 @@
                                           (var->keyword res-form)))
                          :else idx))
                      forms)]
-    `(-> ~@(->> forms
-            (map (fn [idx k form]
-                   (cond
-                     (zero? idx) `(label {:identifier ~k :idx ~idx} ~form)
-                     (nil? k) `((fn [args#] (-> args# ~form)))
-                     :else
-                     `((fn [args#]
-                         (label {:identifier ~k :idx ~idx} (-> args# ~form))))))
-                 (range)
-                 keyword-steps)))))
+    `(~->-macro
+      ~@(->> forms
+             (map (fn [idx k form]
+                    (cond
+                      (zero? idx) `(label {:identifier ~k :idx ~idx} ~form)
+                      (nil? k) `((fn [args#] (-> args# ~form)))
+                      :else
+                      `((fn [args#]
+                          (label {:identifier ~k :idx ~idx} (-> args# ~form))))))
+                  (range)
+                  keyword-steps)))))
 
-(defn ->*-reader
-  [form]
-  (clojure.walk/postwalk
-   (fn [v]
-     (if (and (symbol? v)
-              (= #'clojure.core/-> (resolve v)))
-       `->*
-       v))
-   form))
+(defmacro thread-first-macro-builder
+  "Yes, a macro that creates another macro.
+  It should be useful when you have some thread first
+  macro from some of your dependencies (e.g. cats.core/->=) and
+  you would like to use arrudeia.
+
+  It also creates a new data reader so you could use it
+  with a tagged literal."
+  [name ->-macro]
+  `(do
+     (defmacro ~(symbol name)
+       ([~'& ~'forms]
+        (apply build-thread-first-macro-body ~->-macro ~'forms)))
+
+     (defn ~(symbol (str name "-reader"))
+       [~'form]
+       (walk/postwalk
+        (fn [v#]
+          (if (and (symbol? v#)
+                   (= (resolve ~->-macro)
+                      (resolve v#)))
+            (symbol (str ~*ns* "/" ~name))
+            v#))
+        ~'form))))
+
+(thread-first-macro-builder "->*" `->)
 
 (defmacro register
   [proc-name pipe]
-  `(let [p# {:proc (future
-                     (binding [*proc-name* ~proc-name]
-                       ~pipe))
+  `(let [p# {:proc (try
+                     (future
+                       (binding [*proc-name* ~proc-name]
+                         ~pipe))
+                     (catch Exception e#
+                       (clojure.pprint/pprint
+                        {:EXCEPTION
+                         {~proc-name e#}})
+                       (swap! exceptions conj {~proc-name e#}))
+                     (catch Error e#
+                       (clojure.pprint/pprint
+                        {:EXCEPTION
+                         {~proc-name e#}})
+                       (swap! exceptions conj {~proc-name e#})))
              :proc-name ~proc-name}]
      p#))
 

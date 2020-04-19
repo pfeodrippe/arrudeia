@@ -112,6 +112,7 @@ and then we replace the thread macro at request function
   @balances)
 
 ;; or use the tagged literal (they return the same form)
+;; you can even create your own data readers, see section `Usage` below
 #ar/->*       ;; <<<<< Added here
 (defn request
   [data]
@@ -182,6 +183,17 @@ for multiple processes so you can test some invariants (check its doc).
 
 `arrudeia.core/parse-process-names` can be used together with
 the output of `valid-interleavings`, maps keywords to concrete processes.
+
+If you use some other special thread first like macro (e.g. `cats.core/->=`),
+you can create your own arrudeia macro using
+
+``` clojure
+(thread-first-macro-builder "m->=" `cats.core/->=)
+;; it will create a macro in your namespace called `m->=` which can
+;; be used in place of `cats.core/->=` thread macros.
+
+;; besides, it creates a reader so you can add it to your `data_readers.clj`.
+```
 
 ## Problems
 ### REPL can freeze

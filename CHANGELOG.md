@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0 (2020-04-19)
+
+### New features
+
+* `arrudeia.core/thread-first-macro-builder` macro enables you to create your own
+macro and reader.
+
 ## 0.4.0 (2020-04-19)
 
 ### Breaking changes
