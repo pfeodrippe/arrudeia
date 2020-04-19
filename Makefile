@@ -3,7 +3,7 @@ clj_cmd = env clj -O:default-options
 .PHONY: build
 build:
 	mkdir -p target
-	$(clj_cmd) -A:depstar -m hf.depstar.jar target/arrudeia.jar
+	$(clj_cmd) -A:depstar -m hf.depstar.uberjar target/arrudeia.jar
 
 .PHONY: deploy
 deploy:
