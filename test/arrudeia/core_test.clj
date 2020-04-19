@@ -3,8 +3,15 @@
    [arrudeia.core :as ar]
    [arrudeia.example.transaction :as transaction]
    [arrudeia.example.transaction-nested :as nested]
-   [clojure.test :refer [deftest testing is]]
+   [clojure.test :refer [deftest testing is use-fixtures]]
    [clojure.math.combinatorics :as combo]))
+
+(defn disable-bypass-fixture
+  [f]
+  (ar/without-bypass
+   (f)))
+
+(use-fixtures :each disable-bypass-fixture)
 
 (deftest test-transaction
   (ar/with-bypass

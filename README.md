@@ -126,6 +126,14 @@ The tests will look like
 
 ``` clojure
 ;; also require [arrudeia.core :as ar]
+(defn disable-bypass-fixture
+  [f]
+  (ar/without-bypass
+   (f)))
+
+;; bypass is `true` by default so we can tell where we want
+;; to use arrudeia
+(use-fixtures :each disable-bypass-fixture)
 
 (deftest test-concurrent-transaction
   (reset! transaction/balances {:c1 500M :c2 300M})

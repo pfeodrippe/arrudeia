@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 (2020-04-19)
+
+### Breaking changes
+
+* `arrudeia.core/*bypass*` is true by default.
+
 ## 0.3.3 (2020-04-19)
 
 ### Fixes

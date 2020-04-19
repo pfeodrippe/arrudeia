@@ -4,12 +4,17 @@
    [clojure.walk :as walk]))
 
 (def ^:dynamic *proc-name*)
-(def ^:dynamic *bypass* false)
+(def ^:dynamic *bypass* true)
 
 (defmacro with-bypass
   [& body]
   `(binding [*bypass* true]
-    ~@body))
+     ~@body))
+
+(defmacro without-bypass
+  [& body]
+  `(binding [*bypass* false]
+     ~@body))
 
 (defonce semaphore (atom {:debug []}))
 
