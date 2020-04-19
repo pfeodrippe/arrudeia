@@ -102,12 +102,23 @@ We require it with
 and then we replace the thread macro at request function
 
 ``` clojure
+;; you can change the thread-first directly
 (defn request
   [data]
   (->* (adapt data)    ;; <<<<< Changed here
        add-new-amounts
        give-money!
        receive-money!)
+  @balances)
+
+;; or use the tagged literal (they return the same form)
+#ar/->*       ;; <<<<< Added here
+(defn request
+  [data]
+  (-> (adapt data)
+      add-new-amounts
+      give-money!
+      receive-money!)
   @balances)
 ```
 

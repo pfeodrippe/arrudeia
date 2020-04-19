@@ -1,5 +1,7 @@
 (ns arrudeia.core
-  (:require [clojure.math.combinatorics :as combo]))
+  (:require
+   [clojure.math.combinatorics :as combo]
+   [clojure.walk :as walk]))
 
 (def ^:dynamic *proc-name*)
 (def ^:dynamic *bypass* false)
@@ -76,6 +78,16 @@
                          (label {:identifier ~k :idx ~idx} (-> args# ~form))))))
                  (range)
                  keyword-steps)))))
+
+(defn ->*-reader
+  [form]
+  (clojure.walk/postwalk
+   (fn [v]
+     (if (and (symbol? v)
+              (= #'clojure.core/-> (resolve v)))
+       `->*
+       v))
+   form))
 
 (defmacro register
   [proc-name pipe]
