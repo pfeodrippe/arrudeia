@@ -1,6 +1,4 @@
-(ns arrudeia.example.transaction
-  (:require
-   [arrudeia.core :refer [->*]]))
+(ns arrudeia.example.transaction)
 
 (def balances (atom {}))
 
@@ -24,10 +22,13 @@
   (swap! balances assoc receiver receiver-new-amount)
   args)
 
+;; The tagged literal `#ar/->*` replaces all `clojure.core/->` for
+;; `arrudeia.core/->*` at the following form.
+#ar/->*
 (defn request
   [data]
-  (->* (adapt data)
-        add-new-amounts
-        (->* give-money!
-              receive-money!))
+  (-> (adapt data)
+      add-new-amounts
+      (-> give-money!
+          receive-money!))
   @balances)

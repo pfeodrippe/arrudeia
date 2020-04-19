@@ -20,8 +20,6 @@
                                    :sender :c2
                                    :receiver :c1}))))))
 
-
-
 (deftest test-simple-concurrent-transaction
   (reset! transaction/balances {:c1 10M :c2 10M})
   (let [t1 (ar/register :t1 (transaction/request {:money "1"
