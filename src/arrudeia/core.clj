@@ -116,15 +116,13 @@
   (run! future-cancel (set (mapv :proc procs))))
 
 (defn run-processes!
+  "Returns a map of `procs` with their returned values."
   [procs]
   (swap! semaphore (constantly {:debug []}))
-  (run! run-step procs)
-  ;; cancel all remaining futures processes
-  (cancel-remaining-steps (mapv first procs))
-  ;; return debug information
-  (let [debug (:debug @semaphore)]
-    (swap! semaphore (constantly {:debug []}))
-    debug))
+  (let [results (zipmap procs (mapv run-step procs))]
+    ;; cancel all remaining futures processes
+    (cancel-remaining-steps (mapv first procs))
+    results))
 
 (defn parse-process-names
   [process-name->process process-with-steps]
