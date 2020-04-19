@@ -109,6 +109,8 @@
    (swap! semaphore assoc-in [proc-name step] :start)
    ;; wait for triggered step
    (while (not= (get-in @semaphore [proc-name step]) :done))
+   ;; step could be used again at pipeline, so we reset its value
+   (swap! semaphore assoc-in [proc-name step] nil)
    (get-in @semaphore [proc-name [step :args-after]])))
 
 (defn cancel-remaining-steps
@@ -119,10 +121,7 @@
   "Returns a map of `procs` with their returned values."
   [procs]
   (swap! semaphore (constantly {:debug []}))
-  (let [results (zipmap procs (mapv run-step procs))]
-    ;; cancel all remaining futures processes
-    (cancel-remaining-steps (mapv first procs))
-    results))
+  (zipmap procs (mapv run-step procs)))
 
 (defn parse-process-names
   [process-name->process process-with-steps]
