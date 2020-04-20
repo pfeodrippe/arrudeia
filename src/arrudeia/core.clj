@@ -1,7 +1,8 @@
 (ns arrudeia.core
   (:require
    [clojure.math.combinatorics :as combo]
-   [clojure.walk :as walk]))
+   [clojure.walk :as walk]
+   [clojure.pprint :as pp]))
 
 (def ^:dynamic *proc-name*)
 (def ^:dynamic *bypass* true)
@@ -113,24 +114,36 @@
 
 (thread-first-macro-builder "->*" `->)
 
+(defrecord ArrudeiaProcess [proc proc-name]
+  clojure.lang.IDeref
+  (deref [_]
+    ;; this `swap!` means that processes which are deferred will be
+    ;; run until completion
+    (swap! semaphore assoc [proc-name :arrudeia/next] :arrudeia/until-the-end)
+    @proc))
+
+(prefer-method pp/simple-dispatch clojure.lang.IPersistentMap clojure.lang.IDeref)
+
 (defmacro register
   [proc-name pipe]
-  `(let [p# {:proc (try
-                     (future
-                       (binding [*proc-name* ~proc-name]
-                         ~pipe))
-                     (catch Exception e#
-                       (clojure.pprint/pprint
-                        {:EXCEPTION
-                         {~proc-name e#}})
-                       (swap! exceptions conj {~proc-name e#}))
-                     (catch Error e#
-                       (clojure.pprint/pprint
-                        {:EXCEPTION
-                         {~proc-name e#}})
-                       (swap! exceptions conj {~proc-name e#})))
-             :proc-name ~proc-name}]
-     p#))
+  `(do (swap! semaphore (constantly {:debug []}))
+       (let [p# (-> {:proc (future
+                             (binding [*proc-name* ~proc-name]
+                               (try
+                                 ~pipe
+                                 (catch Exception e#
+                                   (clojure.pprint/pprint
+                                    {:EXCEPTION
+                                     {~proc-name e#}})
+                                   (swap! exceptions conj {~proc-name e#}))
+                                 (catch Error e#
+                                   (clojure.pprint/pprint
+                                    {:EXCEPTION
+                                     {~proc-name e#}})
+                                   (swap! exceptions conj {~proc-name e#})))))
+                     :proc-name ~proc-name}
+                    map->ArrudeiaProcess)]
+         p#)))
 
 (defn run-step
   ([proc-with-step]
@@ -156,7 +169,13 @@
   "Returns a map of `procs` with their returned values."
   [procs]
   (swap! semaphore (constantly {:debug []}))
-  (zipmap procs (mapv run-step procs)))
+  (try
+    (zipmap procs (mapv run-step procs))
+    (finally
+      (->> procs
+           (map first)
+           set
+           (run! deref)))))
 
 (defn parse-process-names
   [process-name->process process-with-steps]

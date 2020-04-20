@@ -35,7 +35,7 @@
     (ar/run-processes! [[t1 0]
                         [t1 1]
                         [t1 ::transaction/give-money!]]))
-  (is (= {:c1 9M :c2 10M}
+  (is (= {:c1 9M :c2 11M}
          @transaction/balances)))
 
 (deftest test-concurrent-transaction
@@ -56,25 +56,26 @@
 
 (deftest test-transaction-interleavings
   (testing "no valid balances invariant"
-    (->> (for [interleaving (ar/valid-interleavings
-                             [[:t1 ::transaction/add-new-amounts]
-                              [:t1 ::transaction/give-money!]
-                              [:t1 ::transaction/receive-money!]]
-                             [[:t2 ::transaction/add-new-amounts]
-                              [:t2 ::transaction/give-money!]
-                              [:t2 ::transaction/receive-money!]])]
-           (do (reset! transaction/balances {:c1 500M :c2 300M})
-               (let [t1 (ar/register :t1 (transaction/request {:money "50"
-                                                               :sender :c1
-                                                               :receiver :c2}))
-                     t2 (ar/register :t2 (transaction/request {:money "225"
-                                                               :sender :c2
-                                                               :receiver :c1}))]
-                 (ar/run-processes! (ar/parse-process-names
-                                     {:t1 t1 :t2 t2} interleaving)))
-               (reduce + 0.0M (vals @transaction/balances))))
-         (every? #(= % 800.M))
-         not))
+    (is (= false
+           (->> (for [interleaving (ar/valid-interleavings
+                                    [[:t1 ::transaction/add-new-amounts]
+                                     [:t1 ::transaction/give-money!]
+                                     [:t1 ::transaction/receive-money!]]
+                                    [[:t2 ::transaction/add-new-amounts]
+                                     [:t2 ::transaction/give-money!]
+                                     [:t2 ::transaction/receive-money!]])]
+                  (do (reset! transaction/balances {:c1 500M :c2 300M})
+                      (let [t1 (ar/register :t1 (transaction/request {:money "50"
+                                                                      :sender :c1
+                                                                      :receiver :c2}))
+                            t2 (ar/register :t2 (transaction/request {:money "225"
+                                                                      :sender :c2
+                                                                      :receiver :c1}))]
+                        (ar/run-processes! (ar/parse-process-names
+                                            {:t1 t1 :t2 t2} interleaving)))
+                      (reduce + 0.0M (vals @transaction/balances))))
+                (every? #(= % 800.M))))))
+
   (testing "bypass give-money! operation (it's considered, for our purposes
 as a atomic operation together with receive-money); balances invariant is
 respected but final values of clients are wrong"
@@ -108,15 +109,17 @@ correct"
                                                       :receiver :c1}))]
         (ar/run-processes! (ar/parse-process-names
                             {:t1 t1 :t2 t2} interleaving)))
-      (is (= {:c1 675M, :c2 125M}  @transaction/balances)))))
+      (is (= {:c1 675M, :c2 125M} @transaction/balances)))))
 
 (deftest test-run-step
   (reset! transaction/balances {:c1 500M :c2 300M})
-  (let [t1 (ar/register :t1 (transaction/request {:money "50"
-                                                  :sender :c1
-                                                  :receiver :c2}))]
-    (ar/run-step [t1 ::transaction/receive-money!]))
-  (is (= {:c1 450M :c2 350M} @transaction/balances)))
+  (let [t1 (ar/register :t1 (transaction/request
+                             {:money "50"
+                              :sender :c1
+                              :receiver :c2}))]
+    (ar/run-step [t1 ::transaction/give-money!])
+    (is (= {:c1 450M :c2 300M} @transaction/balances))
+    (is (= {:c1 450M :c2 350M} @t1))))
 
 (deftest test-nested
   (reset! nested/balances {:c1 500M :c2 300M})

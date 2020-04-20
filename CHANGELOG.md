@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.0 (2020-04-19)
+
+### Breaking changes
+
+* `arrudeia.core/run-processes!` run until processes completions, if you wanna
+partial run, you can use `arrudeia.core/run-step`.
+
+### New features
+
+* `proc` now is a `ArrudeiaProcess`, you can defer it so the process runs until
+completion.
+
 ## 0.5.0 (2020-04-19)
 
 ### New features
