@@ -169,6 +169,9 @@ form unmodified. `label` will not modify the form passed to it.
 Besides `->*`, also check `arrudeia.core/label`, it can be used in any
 place where you want to create a step to be tested.
 
+You can use `arrudeia.core/run-step` to check results for each step
+and, probably, check invariants in tests.
+
 `arrudeia.core/valid-interleavings` returns all possible interleavings
 for multiple processes so you can test some invariants (check its doc).
 ``` clojure
