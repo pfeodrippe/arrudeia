@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.0 (2020-04-20)
+
+### Changes
+
+* You can set the environment variable `ARRUDEIA_DISABLE_MACROS` to `1` to
+generate code as if not using arrudeia macros.
+
 ## 0.6.0 (2020-04-19)
 
 ### Breaking changes

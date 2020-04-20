@@ -5,7 +5,11 @@
    [clojure.pprint :as pp]))
 
 (def ^:dynamic *proc-name*)
+
 (def ^:dynamic *bypass* true)
+
+(def disable-macros?
+  (= (System/getenv "ARRUDEIA_DISABLE_MACROS") "1"))
 
 (defmacro with-bypass
   [& body]
@@ -56,11 +60,13 @@
 
 (defmacro label
   [{:keys [:identifier :idx]} & body]
-  `(do
-     (waiting-step {} [*proc-name* ~identifier ~idx])
-     (done-step
-      ~@body
-      [*proc-name* ~identifier ~idx])))
+  (if disable-macros?
+    `(do ~@body)
+    `(do
+       (waiting-step {} [*proc-name* ~identifier ~idx])
+       (done-step
+        ~@body
+        [*proc-name* ~identifier ~idx]))))
 
 (defn build-thread-first-macro-body
   [->-macro & forms]
@@ -99,18 +105,22 @@
   `(do
      (defmacro ~(symbol name)
        ([~'& ~'forms]
-        (apply build-thread-first-macro-body ~->-macro ~'forms)))
+        (if disable-macros?
+          `(~~->-macro ~@~'forms)
+          (apply build-thread-first-macro-body ~->-macro ~'forms))))
 
      (defn ~(symbol (str name "-reader"))
        [~'form]
-       (walk/postwalk
-        (fn [v#]
-          (if (and (symbol? v#)
-                   (= (resolve ~->-macro)
-                      (resolve v#)))
-            (symbol (str ~*ns* "/" ~name))
-            v#))
-        ~'form))))
+       (if disable-macros?
+         ~'form
+         (walk/postwalk
+          (fn [v#]
+            (if (and (symbol? v#)
+                     (= (resolve ~->-macro)
+                        (resolve v#)))
+              (symbol (str ~*ns* "/" ~name))
+              v#))
+          ~'form)))))
 
 (thread-first-macro-builder "->*" `->)
 

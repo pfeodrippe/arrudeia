@@ -156,6 +156,14 @@ The tests will look like
 Look at this, money has been created out of thin air!
 This is not good, but I leave the solution as an exercise to the reader =P
 
+## In production (or not test environment)
+
+When not in a test environment, you can disable the arrudeia macro code with
+`ARRUDEIA_DISABLE_MACROS=1` set as one of your environment variables. It will
+just return normal code equivalent to using the desired thread macro (e.g for
+`->*`, it will use `clojure.core/->` instead). The data readers will return the
+form unmodified. `label` will not modify the form passed to it.
+
 ## Usage
 
 Besides `->*`, also check `arrudeia.core/label`, it can be used in any
