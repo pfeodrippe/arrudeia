@@ -138,7 +138,8 @@
   [proc-name pipe]
   `(do (swap! semaphore (constantly {:debug []}))
        (let [p# (-> {:proc (future
-                             (binding [*proc-name* ~proc-name]
+                             (binding [*proc-name* ~proc-name
+                                       *bypass* false]
                                (try
                                  ~pipe
                                  (catch Exception e#

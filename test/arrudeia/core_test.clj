@@ -6,26 +6,18 @@
    [clojure.test :refer [deftest testing is use-fixtures]]
    [clojure.math.combinatorics :as combo]))
 
-(defn disable-bypass-fixture
-  [f]
-  (ar/without-bypass
-   (f)))
-
-(use-fixtures :each disable-bypass-fixture)
-
 (deftest test-transaction
-  (ar/with-bypass
-    (reset! transaction/balances {:c1 500M :c2 300M})
-    (testing "c1 transfers money to c2"
-      (is (= {:c1 450M :c2 350M}
-             (transaction/request {:money "50"
-                                   :sender :c1
-                                   :receiver :c2}))))
-    (testing "c2 transfers money to c1"
-      (is (= {:c1 675M :c2 125M}
-             (transaction/request {:money "225"
-                                   :sender :c2
-                                   :receiver :c1}))))))
+  (reset! transaction/balances {:c1 500M :c2 300M})
+  (testing "c1 transfers money to c2"
+    (is (= {:c1 450M :c2 350M}
+           (transaction/request {:money "50"
+                                 :sender :c1
+                                 :receiver :c2}))))
+  (testing "c2 transfers money to c1"
+    (is (= {:c1 675M :c2 125M}
+           (transaction/request {:money "225"
+                                 :sender :c2
+                                 :receiver :c1})))))
 
 (deftest test-simple-concurrent-transaction
   (reset! transaction/balances {:c1 10M :c2 10M})

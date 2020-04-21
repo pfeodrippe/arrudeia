@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.1 (2020-04-21)
+
+### Changes
+
+* `*bypass` is automatically set to `false` when using `register`.
+
 ## 0.7.0 (2020-04-20)
 
 ### New features
