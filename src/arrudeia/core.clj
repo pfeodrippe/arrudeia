@@ -6,6 +6,8 @@
 
 (def ^:dynamic *proc-name*)
 
+(def ^:dynamic *result-modifiers* {})
+
 (def ^:dynamic *bypass* true)
 
 (def disable-macros?
@@ -45,13 +47,19 @@
 
 (defn done-step
   [args [proc-name keyword idx]]
-  (when (not *bypass*)
-    (swap! semaphore update :debug conj {:done [proc-name keyword idx]})
-    (swap! semaphore assoc-in [proc-name [idx :args-after]] args)
-    (swap! semaphore assoc-in [proc-name idx] :done)
-    (swap! semaphore assoc-in [proc-name [keyword :args-after]] args)
-    (swap! semaphore assoc-in [proc-name keyword] :done))
-  args)
+  (if (not *bypass*)
+    (do
+      (swap! semaphore update :debug conj {:done [proc-name keyword idx]})
+      (swap! semaphore assoc-in [proc-name [idx :args-after]] args)
+      (swap! semaphore assoc-in [proc-name idx] :done)
+      (swap! semaphore assoc-in [proc-name [keyword :args-after]] args)
+      (swap! semaphore assoc-in [proc-name keyword] :done)
+      ;; apply result-modifier to args
+      ((or (get *result-modifiers* keyword)
+           (get *result-modifiers* idx)
+           identity)
+       args))
+    args))
 
 (defn var->keyword
   [v]
@@ -135,11 +143,12 @@
 (prefer-method pp/simple-dispatch clojure.lang.IPersistentMap clojure.lang.IDeref)
 
 (defmacro register
-  [proc-name pipe]
+  [proc-name pipe & [{:keys [:result-modifiers]}]]
   `(do (swap! semaphore (constantly {:debug []}))
        (let [p# (-> {:proc (future
                              (binding [*proc-name* ~proc-name
-                                       *bypass* false]
+                                       *bypass* false
+                                       *result-modifiers* ~result-modifiers]
                                (try
                                  ~pipe
                                  (catch Exception e#

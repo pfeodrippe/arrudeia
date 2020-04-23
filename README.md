@@ -187,7 +187,7 @@ for multiple processes so you can test some invariants (check its doc).
 the output of `valid-interleavings`, maps keywords to concrete processes.
 
 If you use some other special thread first like macro (e.g. `cats.core/->=`),
-you can create your own arrudeia macro using
+you can create your own arrudeia macro using `thread-first-macro-builder`.
 
 ``` clojure
 (thread-first-macro-builder "m->=" `cats.core/->=)
@@ -195,6 +195,22 @@ you can create your own arrudeia macro using
 ;; be used in place of `cats.core/->=` thread macros.
 
 ;; besides, it creates a reader so you can add it to your `data_readers.clj`.
+```
+In `register` you can pass (as third argument) a result modifier to, well,
+modify the output of one step.
+
+``` clojure
+;; it will change the result of `give-money`
+;; this enables you to do whatever your test need for each step
+;; see test `test-args-modification`
+;; BEWARE of duplicated steps (you could use the index for these cases)!
+(ar/register :t1 (transaction/request {:money "50"
+                                       :sender :c1
+                                       :receiver :c2})
+             {:result-modifiers
+              {::transaction/give-money!
+               (fn [args]
+                 (update args :receiver-new-amount + 132M))}})
 ```
 
 ## Problems

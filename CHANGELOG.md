@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.0 (2020-04-22)
+
+### New features
+
+* You can pass the key `:result-modifiers` to `register` to modify the
+result of one step.
+
 ## 0.7.1 (2020-04-21)
 
 ### Changes

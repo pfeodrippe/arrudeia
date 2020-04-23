@@ -46,6 +46,25 @@
                         [t2 ::transaction/receive-money!]]))
   (is (= 1075M (reduce + 0.0M (vals @transaction/balances)))))
 
+(deftest test-args-modification
+  ;; we modify t1's :give-money! result output
+  (reset! transaction/balances {:c1 500M :c2 300M})
+  (let [t1 (ar/register :t1 (transaction/request {:money "50"
+                                                  :sender :c1
+                                                  :receiver :c2})
+                        {:result-modifiers
+                         {::transaction/give-money!
+                          (fn [args]
+                            (update args :receiver-new-amount + 132M))}})
+        t2 (ar/register :t2 (transaction/request {:money "225"
+                                                  :sender :c2
+                                                  :receiver :c1}))]
+    (ar/run-processes! [[t1 ::transaction/add-new-amounts]
+                        [t2 ::transaction/add-new-amounts]
+                        [t2 ::transaction/receive-money!]
+                        [t1 ::transaction/receive-money!]]))
+  (is (= {:c1 450M :c2 482M} @transaction/balances)))
+
 (deftest test-transaction-interleavings
   (testing "no valid balances invariant"
     (is (= false
