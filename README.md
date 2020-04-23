@@ -201,7 +201,7 @@ modify the output of one step.
 
 ``` clojure
 ;; it will change the result of `give-money`
-;; this enables you to do whatever your test need for each step
+;; this enables you to do whatever your test needs for each step
 ;; see test `test-args-modification`
 ;; BEWARE of duplicated steps (you could use the index for these cases)!
 (ar/register :t1 (transaction/request {:money "50"
