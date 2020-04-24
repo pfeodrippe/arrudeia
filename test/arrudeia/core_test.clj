@@ -137,6 +137,7 @@ correct"
   (let [t1 (ar/register :t1 (nested/request {:money "50"
                                              :sender :c1
                                              :receiver :c2}))]
+    (ar/run-step [t1 :add])             ;; `:add` is a custom name
     (ar/run-step [t1 :custom/receive-money])
     (Thread/sleep 100)
     (is (realized? (:proc t1)))

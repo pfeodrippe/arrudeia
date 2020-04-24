@@ -29,9 +29,11 @@
   [args]
   (receive-money! (->* (give-money! args))))
 
+#ar/->*
 (defn request
   [data]
-  (->* (adapt data)
-       add-new-amounts
-       transfer-money!)
+  (-> (adapt data)
+      ;; instead of ::add-new-amounts, step name will be :add
+      ^{:arrudeia/name :add} add-new-amounts
+      transfer-money!)
   @balances)

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.0 (2020-04-23)
+
+### New features
+
+* Added possibility to customize step name in thread first macros using metadata
+(`:arrudeia/name`).
+
 ## 0.8.0 (2020-04-22)
 
 ### New features

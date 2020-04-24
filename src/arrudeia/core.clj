@@ -93,11 +93,17 @@
       ~@(->> forms
              (map (fn [idx k form]
                     (cond
-                      (zero? idx) `(label {:identifier ~k :idx ~idx} ~form)
+                      (zero? idx)
+                      `(label {:identifier ~(:arrudeia/name (meta form) k)
+                               :idx ~idx}
+                              ~form)
+
                       (nil? k) `((fn [args#] (-> args# ~form)))
                       :else
                       `((fn [args#]
-                          (label {:identifier ~k :idx ~idx} (-> args# ~form))))))
+                          (label {:identifier ~(:arrudeia/name (meta form) k)
+                                  :idx ~idx}
+                                 (-> args# ~form))))))
                   (range)
                   keyword-steps)))))
 

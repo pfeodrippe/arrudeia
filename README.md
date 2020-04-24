@@ -118,7 +118,7 @@ and then we replace the thread macro at request function
   [data]
   (-> (adapt data)
       add-new-amounts
-      give-money!
+      ^{:arrudeia/name give-it} give-money! ;; yes, you can customize step name too!!
       receive-money!)
   @balances)
 ```
@@ -165,6 +165,7 @@ and, probably, check invariants in tests.
 
 `arrudeia.core/valid-interleavings` returns all possible interleavings
 for multiple processes so you can test some invariants (check its doc).
+
 ``` clojure
 ;; example
 (valid-interleavings [[:t1 :step1]
@@ -196,6 +197,7 @@ you can create your own arrudeia macro using `thread-first-macro-builder`.
 
 ;; besides, it creates a reader so you can add it to your `data_readers.clj`.
 ```
+
 In `register` you can pass (as third argument) a result modifier to, well,
 modify the output of one step.
 
@@ -203,7 +205,7 @@ modify the output of one step.
 ;; it will change the result of `give-money`
 ;; this enables you to do whatever your test needs for each step
 ;; see test `test-args-modification`
-;; BEWARE of duplicated steps (you could use the index for these cases)!
+;; BEWARE of duplicated steps (you could use the metadata :arrudeia/name instead)!
 (ar/register :t1 (transaction/request {:money "50"
                                        :sender :c1
                                        :receiver :c2})
