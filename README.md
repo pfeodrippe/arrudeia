@@ -118,7 +118,7 @@ and then we replace the thread macro at request function
   [data]
   (-> (adapt data)
       add-new-amounts
-      ^{:arrudeia/name give-it} give-money! ;; yes, you can customize step name too!!
+      ^{:arrudeia/name :give-it} give-money! ;; yes, you can customize step name too!!
       receive-money!)
   @balances)
 ```
