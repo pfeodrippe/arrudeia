@@ -218,9 +218,8 @@ modify the output of one step.
 ## Problems
 ### REPL can freeze
 
-You may have to restart the REPL sometimes because there is some
-bug in this library or you just put called some step which does not
-exist.
+You may have to restart the REPL sometimes because maybe you 
+just called some step which does not exist.
 
 ## Copyright & License
 
