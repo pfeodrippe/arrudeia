@@ -66,7 +66,18 @@
   (keyword (str (:ns (meta v)))
            (str (:name (meta v)))))
 
-(defmacro label
+(defmacro ^:deprecated label
+  "Use `with-label` instead."
+  [{:keys [:identifier :idx]} & body]
+  (if disable-macros?
+    `(do ~@body)
+    `(do
+       (waiting-step {} [*proc-name* ~identifier ~idx])
+       (done-step
+        ~@body
+        [*proc-name* ~identifier ~idx]))))
+
+(defmacro with-label
   [{:keys [:identifier :idx]} & body]
   (if disable-macros?
     `(do ~@body)
@@ -94,16 +105,16 @@
              (map (fn [idx k form]
                     (cond
                       (zero? idx)
-                      `(label {:identifier ~(:arrudeia/name (meta form) k)
-                               :idx ~idx}
-                              ~form)
+                      `(with-label {:identifier ~(:arrudeia/name (meta form) k)
+                                    :idx ~idx}
+                         ~form)
 
                       (nil? k) `((fn [args#] (-> args# ~form)))
                       :else
                       `((fn [args#]
-                          (label {:identifier ~(:arrudeia/name (meta form) k)
-                                  :idx ~idx}
-                                 (-> args# ~form))))))
+                          (with-label {:identifier ~(:arrudeia/name (meta form) k)
+                                       :idx ~idx}
+                            (-> args# ~form))))))
                   (range)
                   keyword-steps)))))
 

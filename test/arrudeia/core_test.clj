@@ -3,8 +3,7 @@
    [arrudeia.core :as ar]
    [arrudeia.example.transaction :as transaction]
    [arrudeia.example.transaction-nested :as nested]
-   [clojure.test :refer [deftest testing is use-fixtures]]
-   [clojure.math.combinatorics :as combo]))
+   [clojure.test :refer [deftest testing is use-fixtures]]))
 
 (deftest test-transaction
   (reset! transaction/balances {:c1 500M :c2 300M})

@@ -153,11 +153,11 @@ When not in a test environment, you can disable the arrudeia macro code with
 `ARRUDEIA_DISABLE_MACROS=1` set as one of your environment variables. It will
 just return normal code equivalent to using the desired thread macro (e.g for
 `->*`, it will use `clojure.core/->` instead). The data readers will return the
-form unmodified. `label` will not modify the form passed to it.
+form unmodified. `with-label` will not modify the form passed to it.
 
 ## Usage
 
-Besides `->*`, also check `arrudeia.core/label`, it can be used in any
+Besides `->*`, also check `arrudeia.core/with-label`, it can be used in any
 place where you want to create a step to be tested.
 
 You can use `arrudeia.core/run-step` to check results for each step
@@ -218,7 +218,7 @@ modify the output of one step.
 ## Problems
 ### REPL can freeze
 
-You may have to restart the REPL sometimes because maybe you 
+You may have to restart the REPL sometimes because maybe you
 just called some step which does not exist.
 
 ## Copyright & License

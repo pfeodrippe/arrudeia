@@ -3,9 +3,9 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>pfeodrippe</groupId>
   <artifactId>arrudeia</artifactId>
-  <version>0.9.0</version>
+  <version>0.10.0-SNAPSHOT</version>
   <name>arrudeia</name>
-  <description></description>
+  <description/>
   <url>https://github.com/pfeodrippe/arrudeia</url>
   <licenses>
     <license>
@@ -31,4 +31,19 @@
       <url>https://clojars.org/repo</url>
     </repository>
   </distributionManagement>
+  <dependencies>
+    <dependency>
+      <groupId>org.clojure</groupId>
+      <artifactId>clojure</artifactId>
+      <version>1.10.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.clojure</groupId>
+      <artifactId>math.combinatorics</artifactId>
+      <version>0.1.6</version>
+    </dependency>
+  </dependencies>
+  <build>
+    <sourceDirectory>src</sourceDirectory>
+  </build>
 </project>

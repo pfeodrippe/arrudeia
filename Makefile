@@ -1,9 +1,9 @@
-clj_cmd = env clj -O:default-options
+clj_cmd = env clj
 
 .PHONY: build
 build:
 	mkdir -p target
-	$(clj_cmd) -A:depstar -m hf.depstar.uberjar target/arrudeia.jar
+	$(clj_cmd) -X:depstar uberjar :jar target/arrudeia.jar :sync-pom true :version '"0.10.0-SNAPSHOT"' :exclude '["clojure/.*", "clojure/math/.*"]'
 
 .PHONY: deploy
 deploy:
@@ -11,8 +11,8 @@ deploy:
 
 .PHONY: test
 test:
-	$(clj_cmd) -A:test
+	clj -M:test
 
 .PHONY: autotest
 autotest:
-	$(clj_cmd) -A:test --watch
+	clj -M:test --watch
