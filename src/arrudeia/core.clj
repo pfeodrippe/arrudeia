@@ -78,14 +78,19 @@
         [*proc-name* ~identifier ~idx]))))
 
 (defmacro with-label
-  [{:keys [:identifier :idx]} & body]
+  [opts & body]
   (if disable-macros?
     `(do ~@body)
-    `(do
-       (waiting-step {} [*proc-name* ~identifier ~idx])
+    `(let [opts# ~opts
+           identifier# (or (:identifier opts#)
+                           ;; If we don't have a identifier, then `opts`
+                           ;; is a keyword.
+                           opts#)
+           idx# (:idx opts#)]
+       (waiting-step {} [*proc-name* identifier# idx#])
        (done-step
         ~@body
-        [*proc-name* ~identifier ~idx]))))
+        [*proc-name* identifier# idx#]))))
 
 (defn build-thread-first-macro-body
   [->-macro & forms]
