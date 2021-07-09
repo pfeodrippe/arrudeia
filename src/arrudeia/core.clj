@@ -48,17 +48,22 @@
 (defn done-step
   [args [proc-name keyword idx]]
   (if (not *bypass*)
-    (do
-      (swap! semaphore update :debug conj {:done [proc-name keyword idx]})
+    (let [{:keys [:cancel-execution?]} (get-in @semaphore [proc-name :arrudeia/opts keyword])]
+      ;; You may want to cancel the execution if you are the last step so you don't
+      ;; run the rest of the code, stopping in the side effect of this step.
+      (swap! semaphore update :debug conj {:done [proc-name keyword idx]
+                                           :cancel-execution? cancel-execution?})
       (swap! semaphore assoc-in [proc-name [idx :args-after]] args)
       (swap! semaphore assoc-in [proc-name idx] :done)
       (swap! semaphore assoc-in [proc-name [keyword :args-after]] args)
       (swap! semaphore assoc-in [proc-name keyword] :done)
-      ;; apply result-modifier to args
-      ((or (get *result-modifiers* keyword)
-           (get *result-modifiers* idx)
-           identity)
-       args))
+      (if cancel-execution?
+        (.interrupt (Thread/currentThread))
+        ;; Apply result-modifier to args.
+        ((or (get *result-modifiers* keyword)
+             (get *result-modifiers* idx)
+             identity)
+         args)))
     args))
 
 (defn var->keyword
@@ -173,6 +178,8 @@
                                        *result-modifiers* ~result-modifiers]
                                (try
                                  ~pipe
+                                 ;; If a thread is stopped, do not show exception.
+                                 (catch java.lang.ThreadDeath _#)
                                  (catch Exception e#
                                    (clojure.pprint/pprint
                                     {:EXCEPTION
@@ -190,17 +197,19 @@
 (defn run-step
   ([proc-with-step]
    (run-step proc-with-step {}))
-  ([[{:keys [:proc-name]} step]
-    {:keys [:run-intermediate-steps?]
+  ([[{:keys [:proc-name :proc]} step]
+    {:keys [:run-intermediate-steps? :step-opts]
      :or {run-intermediate-steps? true}}]
+   (swap! semaphore assoc-in [proc-name :arrudeia/opts step] (merge step-opts {:proc-future proc}))
    (when run-intermediate-steps?
      (swap! semaphore assoc [proc-name :arrudeia/next] step))
-   ;; trigger new step
+   ;; Trigger new step.
    (swap! semaphore assoc-in [proc-name step] :start)
-   ;; wait for triggered step
+   ;; Wait for triggered step.
    (while (not= (get-in @semaphore [proc-name step]) :done))
-   ;; step could be used again at pipeline, so we reset its value
+   ;; Step could be used again at pipeline, so we reset its associated values.
    (swap! semaphore assoc-in [proc-name step] nil)
+   (swap! semaphore assoc-in [proc-name :arrudeia/opts step] {})
    (get-in @semaphore [proc-name [step :args-after]])))
 
 (defn cancel-remaining-steps
@@ -208,16 +217,31 @@
   (run! future-cancel (set (mapv :proc procs))))
 
 (defn run-processes!
-  "Returns a map of `procs` with their returned values."
-  [procs]
+  "Returns a map of `steps` with their returned values."
+  [steps]
   (swap! semaphore (constantly {:debug []}))
   (try
-    (zipmap procs (mapv run-step procs))
+    (let [reversed-steps-proc-names (->> steps (mapv (comp :proc-name first)) reverse)
+          ;; Find indexes which should have the execution cancelled (last step of
+          ;; a proc).
+          cancelled-indexes (->> (distinct reversed-steps-proc-names)
+                                 (mapv #(- (dec (count steps))
+                                           (.indexOf reversed-steps-proc-names %)))
+                                 set)]
+      (->> steps
+           (map-indexed (fn [idx step]
+                          (run-step step {:step-opts
+                                          (when (contains? cancelled-indexes idx)
+                                            {:cancel-execution? true})})))
+           vec
+           (zipmap steps)))
     (finally
-      (->> procs
-           (map first)
-           set
-           (run! deref)))))
+      (try
+        (->> steps
+             (map first)
+             set
+             (run! deref))
+        (catch java.util.concurrent.CancellationException _)))))
 
 (defn parse-process-names
   [process-name->process process-with-steps]
@@ -256,3 +280,10 @@
                             (reduced false)))
                         true
                         processes-with-steps))))
+
+(comment
+
+  ;; TODO:
+  ;; [ ] - Graceful thread cancelling.
+
+  ())
