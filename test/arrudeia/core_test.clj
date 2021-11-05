@@ -20,17 +20,19 @@
 
 (deftest test-simple-concurrent-transaction
   (reset! transaction/balances {:c1 10M :c2 10M})
+  (swap! ar/semaphore (constantly {:debug []}))
   (let [t1 (ar/register :t1 (transaction/request {:money "1"
                                                   :sender :c1
                                                   :receiver :c2}))]
-    (ar/run-processes! [[t1 0]
-                        [t1 1]
+    (ar/run-processes! [[t1 ::transaction/adapt]
+                        [t1 ::transaction/add-new-amounts]
                         [t1 ::transaction/give-money!]]))
   (is (= {:c1 9M :c2 10M}
          @transaction/balances)))
 
 (deftest test-concurrent-transaction
   (reset! transaction/balances {:c1 500M :c2 300M})
+  (swap! ar/semaphore (constantly {:debug []}))
   (let [t1 (ar/register :t1 (transaction/request {:money "50"
                                                   :sender :c1
                                                   :receiver :c2}))
@@ -48,6 +50,7 @@
 (deftest test-args-modification
   ;; we modify t1's :give-money! result output
   (reset! transaction/balances {:c1 500M :c2 300M})
+  (swap! ar/semaphore (constantly {:debug []}))
   (let [t1 (ar/register :t1 (transaction/request {:money "50"
                                                   :sender :c1
                                                   :receiver :c2})
@@ -75,6 +78,7 @@
                                      [:t2 ::transaction/give-money!]
                                      [:t2 ::transaction/receive-money!]])]
                   (do (reset! transaction/balances {:c1 500M :c2 300M})
+                      (swap! ar/semaphore (constantly {:debug []}))
                       (let [t1 (ar/register :t1 (transaction/request {:money "50"
                                                                       :sender :c1
                                                                       :receiver :c2}))
@@ -95,6 +99,7 @@ respected but final values of clients are wrong"
                           [[:t2 ::transaction/add-new-amounts]
                            [:t2 ::transaction/receive-money!]])]
       (reset! transaction/balances {:c1 500M :c2 300M})
+      (swap! ar/semaphore (constantly {:debug []}))
       (let [t1 (ar/register :t1 (transaction/request {:money "50"
                                                       :sender :c1
                                                       :receiver :c2}))
@@ -111,6 +116,7 @@ correct"
                           [[:t1 ::transaction/receive-money!]]
                           [[:t2 ::transaction/receive-money!]])]
       (reset! transaction/balances {:c1 500M :c2 300M})
+      (swap! ar/semaphore (constantly {:debug []}))
       (let [t1 (ar/register :t1 (transaction/request {:money "50"
                                                       :sender :c1
                                                       :receiver :c2}))
@@ -123,22 +129,20 @@ correct"
 
 (deftest test-run-step
   (reset! transaction/balances {:c1 500M :c2 300M})
+  (swap! ar/semaphore (constantly {:debug []}))
   (let [t1 (ar/register :t1 (transaction/request
                              {:money "50"
                               :sender :c1
                               :receiver :c2}))]
     (ar/run-step [t1 ::transaction/give-money!])
-    (is (= {:c1 450M :c2 300M} @transaction/balances))
-    (is (= {:c1 450M :c2 350M} @t1))))
+    (is (= {:c1 450M :c2 300M} @transaction/balances))))
 
 (deftest test-nested
   (reset! nested/balances {:c1 500M :c2 300M})
+  (swap! ar/semaphore (constantly {:debug []}))
   (let [t1 (ar/register :t1 (nested/request {:money "50"
                                              :sender :c1
                                              :receiver :c2}))]
-    (ar/run-step [t1 :add])             ;; `:add` is a custom name
-    (ar/run-step [t1 :custom/receive-money])
-    (Thread/sleep 100)
-    (is (realized? (:proc t1)))
-    (ar/cancel-remaining-steps [t1]))
+    (ar/run-step [t1 :add])             ; `:add` is a custom name
+    (ar/run-step [t1 :custom/receive-money]))
   (is (= {:c1 450M :c2 350M} @nested/balances)))
